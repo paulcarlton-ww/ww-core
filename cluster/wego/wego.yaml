@@ -1,0 +1,28 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: ww-gitops
+  namespace: flux-system
+spec:
+  chart:
+    spec:
+      chart: weave-gitops
+      sourceRef:
+        kind: HelmRepository
+        name: ww-gitops
+      version: 2.0.6
+  interval: 1m0s
+  values:
+    adminUser:
+      create: true
+      username: wego-admin
+      passwordHash: $2a$10$AdL4UB1LPUy7vIQ0AaU/de7zJ2t7vPWtBLqQ05gqyt/lm70fnTUdm
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: ww-gitops
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  url: https://helm.gitops.weave.works
