@@ -1,0 +1,20 @@
+{
+  "Sid": "Allow_Publish_Alarms",
+  "Effect": "Allow",
+  "Principal": {
+      "Service": "aps.amazonaws.com"
+  },
+  "Action": [
+      "sns:Publish",
+      "sns:GetTopicAttributes"
+  ],
+  "Condition": {
+      "ArnEquals": {
+          "aws:SourceArn": "workspace_ARN"
+      },
+      "StringEquals": {
+          "AWS:SourceAccount": "account_id"
+      }
+  },
+  "Resource": "arn:aws:sns:region:account_id:topic_name"
+}

@@ -1,0 +1,165 @@
+groups:
+- name: k8s.rules1
+  rules:
+  - alert: AlertmanagerClusterFailedToSendAlerts
+    expr: min by(namespace, service, integration) (rate(alertmanager_notifications_failed_total{integration=~".*",job="kube-prometheus-stack-alertmanager",namespace="monitoring"}[5m]) / rate(alertmanager_notifications_total{integration=~".*",job="kube-prometheus-stack-alertmanager",namespace="monitoring"}[5m])) > 0.01
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      description: The minimum notification failure rate to {{ $labels.integration }} sent from any instance in the {{$labels.job}} cluster is {{ $value | humanizePercentage }}.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/alertmanager/alertmanagerclusterfailedtosendalerts
+      summary: () All Alertmanager instances in a cluster failed to send notifications to a critical integration.
+  - alert: AlertmanagerClusterFailedToSendAlerts
+    expr: min by(namespace, service, integration) (rate(alertmanager_notifications_failed_total{integration!~".*",job="kube-prometheus-stack-alertmanager",namespace="monitoring"}[5m]) / rate(alertmanager_notifications_total{integration!~".*",job="kube-prometheus-stack-alertmanager",namespace="monitoring"}[5m])) > 0.01
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      description: The minimum notification failure rate to {{ $labels.integration }} sent from any instance in the {{$labels.job}} cluster is {{ $value | humanizePercentage }}.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/alertmanager/alertmanagerclusterfailedtosendalerts
+      summary: () All Alertmanager instances in a cluster failed to send notifications to a non-critical integration.
+  - alert: AlertmanagerConfigInconsistent
+    expr: count by(namespace, service) (count_values by(namespace, service) ("config_hash", alertmanager_config_hash{job="kube-prometheus-stack-alertmanager",namespace="monitoring"})) != 1
+    for: 20m
+    labels:
+      severity: critical
+    annotations:
+      description: Alertmanager instances within the {{$labels.job}} cluster have different configurations.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/alertmanager/alertmanagerconfiginconsistent
+      summary: () Alertmanager instances within the same cluster have different configurations.
+  - alert: AlertmanagerClusterDown
+    expr: (count by(namespace, service) (avg_over_time(up{job="kube-prometheus-stack-alertmanager",namespace="monitoring"}[5m]) < 0.5) / count by(namespace, service) (up{job="kube-prometheus-stack-alertmanager",namespace="monitoring"})) >= 0.5
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      description: .{{ $value | humanizePercentage }} of Alertmanager instances within the {{$labels.job}} cluster have been up for less than half of the last 5m.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/alertmanager/alertmanagerclusterdown
+      summary: () Half or more of the Alertmanager instances within the same cluster are down.
+  - alert: AlertmanagerClusterCrashlooping
+    expr: (count by(namespace, service) (changes(process_start_time_seconds{job="kube-prometheus-stack-alertmanager",namespace="monitoring"}[10m]) > 4) / count by(namespace, service) (up{job="kube-prometheus-stack-alertmanager",namespace="monitoring"})) >= 0.5
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      description: .{{ $value | humanizePercentage }} of Alertmanager instances within the {{$labels.job}} cluster have restarted at least 5 times in the last 10m.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/alertmanager/alertmanagerclustercrashlooping
+      summary: () Half or more of the Alertmanager instances within the same cluster are crashlooping.
+  - alert: TargetDown
+    expr: 100 * (count by(job, namespace, service) (up == 0) / count by(job, namespace, service) (up)) > 10
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      description: .{{ printf "%.4g" $value }}% of the {{ $labels.job }}/{{ $labels.service }} targets in {{ $labels.namespace }} namespace are down.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/general/targetdown
+      summary: () One or more targets are unreachable.
+  - alert: KubePodCrashLooping
+    expr: max_over_time(kube_pod_container_status_waiting_reason{job="kube-state-metrics",namespace=~".*",reason="CrashLoopBackOff"}[5m]) >= 1
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      description: Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is in waiting state (reason "CrashLoopBackOff").
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubepodcrashlooping
+      summary: () Pod is crash looping.
+  - alert: KubeCPUOvercommit
+    expr: sum(namespace_cpu:kube_pod_container_resource_requests:sum) - (sum(kube_node_status_allocatable{resource="cpu"}) - max(kube_node_status_allocatable{resource="cpu"})) > 0 and (sum(kube_node_status_allocatable{resource="cpu"}) - max(kube_node_status_allocatable{resource="cpu"})) > 0
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      description: Cluster has overcommitted CPU resource requests for Pods by {{ $value }} CPU shares and cannot tolerate node failure.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubecpuovercommit
+      summary: () Cluster has overcommitted CPU resource requests.
+  - alert: KubeMemoryOvercommit
+    expr: sum(namespace_memory:kube_pod_container_resource_requests:sum) - (sum(kube_node_status_allocatable{resource="memory"}) - max(kube_node_status_allocatable{resource="memory"})) > 0 and (sum(kube_node_status_allocatable{resource="memory"}) - max(kube_node_status_allocatable{resource="memory"})) > 0
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      description: Cluster has overcommitted memory resource requests for Pods by {{ $value | humanize }} bytes and cannot tolerate node failure.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubememoryovercommit
+      summary: () Cluster has overcommitted memory resource requests.
+  - alert: KubeCPUQuotaOvercommit
+    expr: sum(min without(resource) (kube_resourcequota{job="kube-state-metrics",resource=~"(cpu|requests.cpu)",type="hard"})) / sum(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) > 1.5
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      description: Cluster has overcommitted CPU resource requests for Namespaces.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubecpuquotaovercommit
+      summary: () Cluster has overcommitted CPU resource requests.
+  - alert: KubeMemoryQuotaOvercommit
+    expr: sum(min without(resource) (kube_resourcequota{job="kube-state-metrics",resource=~"(memory|requests.memory)",type="hard"})) / sum(kube_node_status_allocatable{job="kube-state-metrics",resource="memory"}) > 1.5
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      description: Cluster has overcommitted memory resource requests for Namespaces.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubememoryquotaovercommit
+      summary: () Cluster has overcommitted memory resource requests.
+  - alert: KubeQuotaAlmostFull
+    expr: kube_resourcequota{job="kube-state-metrics",type="used"} / ignoring(instance, job, type) (kube_resourcequota{job="kube-state-metrics",type="hard"} > 0) > 0.9 < 1
+    for: 15m
+    labels:
+      severity: info
+    annotations:
+      description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its {{ $labels.resource }} quota.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubequotaalmostfull
+      summary: () Namespace quota is going to be full.
+  - alert: KubeQuotaFullyUsed
+    expr: kube_resourcequota{job="kube-state-metrics",type="used"} / ignoring(instance, job, type) (kube_resourcequota{job="kube-state-metrics",type="hard"} > 0) == 1
+    for: 15m
+    labels:
+      severity: info
+    annotations:
+      description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its {{ $labels.resource }} quota.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubequotafullyused
+      summary: () Namespace quota is fully used.
+  - alert: KubeQuotaExceeded
+    expr: kube_resourcequota{job="kube-state-metrics",type="used"} / ignoring(instance, job, type) (kube_resourcequota{job="kube-state-metrics",type="hard"} > 0) > 1
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its {{ $labels.resource }} quota.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubequotaexceeded
+      summary: () Namespace quota has exceeded the limits.
+  - alert: CPUThrottlingHigh
+    expr: sum by(container, pod, namespace) (increase(container_cpu_cfs_throttled_periods_total{container!=""}[5m])) / sum by(container, pod, namespace) (increase(container_cpu_cfs_periods_total[5m])) > (25 / 100)
+    for: 15m
+    labels:
+      severity: info
+    annotations:
+      description: .{{ $value | humanizePercentage }} throttling of CPU in namespace {{ $labels.namespace }} for container {{ $labels.container }} in pod {{ $labels.pod }}.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/cputhrottlinghigh
+      summary: () Processes experience elevated CPU throttling.
+  - alert: KubeAPIDown
+    expr: absent(up{job="kubernetes-apiservers"} == 1)
+    for: 15m
+    labels:
+      severity: critical
+    annotations:
+      description: KubeAPI has disappeared from Prometheus target discovery.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubeapidown
+      summary: () Target disappeared from Prometheus target discovery.
+  - alert: KubeNodeNotReady
+    expr: kube_node_status_condition{condition="Ready",job="kube-state-metrics",status="true"} == 0
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      description: .{{ $labels.node }} has been unready for more than 15 minutes.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubenodenotready
+      summary: () Node is not ready.
+  - alert: KubeNodeUnreachable
+    expr: (kube_node_spec_taint{effect="NoSchedule",job="kube-state-metrics",key="node.kubernetes.io/unreachable"} unless ignoring(key, value) kube_node_spec_taint{job="kube-state-metrics",key=~"ToBeDeletedByClusterAutoscaler|cloud.google.com/impending-node-termination|aws-node-termination-handler/spot-itn"}) == 1
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      description: .{{ $labels.node }} is unreachable and some workloads may be rescheduled.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubenodeunreachable
+      summary: () Node is unreachable.

@@ -1,0 +1,54 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: paulcarlton-core
+  region: eu-west-1
+  version: "1.22"
+
+iam:
+  withOIDC: true
+  serviceAccounts:
+    - metadata:
+        name: s3-reader
+      attachPolicyARNs:
+      - "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+
+vpc:
+  clusterEndpoints:
+    publicAccess:  true
+    privateAccess: true
+  publicAccessCIDRs: ["81.152.127.116/32", "17.0.0.0/8"]
+
+managedNodeGroups:
+  - name: ng-1-workers
+    minSize: 2
+    maxSize: 4
+    desiredCapacity: 3
+    instanceType: t3.large
+    volumeSize: 20
+    ssh:
+      allow: true
+      publicKeyPath: ~/.ssh/id_rsa.pub
+    labels: {role: worker}
+    tags:
+      nodegroup-role: worker
+    iam:
+      withAddonPolicies:
+        externalDNS: true
+        certManager: true
+        albIngress: true
+
+gitops:
+  flux:
+    gitProvider: github
+    flags:
+      owner: "paulcarlton-ww"
+      repository: "ww-core"
+      branch: "main"
+      namespace: "flux-system"
+      path: "./cluster"
+      private-key-file: info/cluster-keys/ww-core/cluster-keys
+
+secretsEncryption:
+  keyARN: arn:aws:kms:eu-west-1:482649550366:key/12a962b2-f279-4eaf-bf09-36d97e651ee7

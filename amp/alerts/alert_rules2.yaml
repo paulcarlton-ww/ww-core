@@ -1,0 +1,180 @@
+groups:
+- name: k8s.rules2
+  rules:
+  - alert: KubeletTooManyPods
+    expr: count by(node) ((kube_pod_status_phase{job="kube-state-metrics",phase="Running"} == 1) * on(instance, pod, namespace, cluster) group_left(node) topk by(instance, pod, namespace, cluster) (1, kube_pod_info{job="kube-state-metrics"})) / max by(node) (kube_node_status_capacity{job="kube-state-metrics",resource="pods"} != 1) > 0.95
+    for: 15m
+    labels:
+      severity: info
+    annotations:
+      description: Kubelet '{{ $labels.node }}' is running at {{ $value | humanizePercentage }} of its Pod capacity.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubelettoomanypods
+      summary: () Kubelet is running at capacity.
+  - alert: KubeNodeReadinessFlapping
+    expr: sum by(node) (changes(kube_node_status_condition{condition="Ready",status="true"}[15m])) > 2
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      description: The readiness status of node {{ $labels.node }} has changed {{ $value }} times in the last 15 minutes.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubenodereadinessflapping
+      summary: () Node readiness status is flapping.
+  - alert: NodeFilesystemSpaceFillingUp
+    expr: (node_filesystem_avail_bytes{fstype!="",job="node-exporter"} / node_filesystem_size_bytes{fstype!="",job="node-exporter"} * 100 < 20 and predict_linear(node_filesystem_avail_bytes{fstype!="",job="node-exporter"}[6h], 24 * 60 * 60) < 0 and node_filesystem_readonly{fstype!="",job="node-exporter"} == 0)
+    for: 1h
+    labels:
+      severity: warning
+    annotations:
+      description: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ printf "%.2f" $value }}% available space left and is filling up.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemspacefillingup
+      summary: () Filesystem is predicted to run out of space within the next 24 hours.
+  - alert: NodeFilesystemSpaceFillingUp
+    expr: (node_filesystem_avail_bytes{fstype!="",job="node-exporter"} / node_filesystem_size_bytes{fstype!="",job="node-exporter"} * 100 < 15 and predict_linear(node_filesystem_avail_bytes{fstype!="",job="node-exporter"}[6h], 4 * 60 * 60) < 0 and node_filesystem_readonly{fstype!="",job="node-exporter"} == 0)
+    for: 1h
+    labels:
+      severity: critical
+    annotations:
+      description: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ printf "%.2f" $value }}% available space left and is filling up fast.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemspacefillingup
+      summary: () Filesystem is predicted to run out of space within the next 4 hours.
+  - alert: NodeFilesystemAlmostOutOfSpace
+    expr: (node_filesystem_avail_bytes{fstype!="",job="node-exporter"} / node_filesystem_size_bytes{fstype!="",job="node-exporter"} * 100 < 5 and node_filesystem_readonly{fstype!="",job="node-exporter"} == 0)
+    for: 30m
+    labels:
+      severity: warning
+    annotations:
+      description: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ printf "%.2f" $value }}% available space left.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemalmostoutofspace
+      summary: () Filesystem has less than 5% space left.
+  - alert: NodeFilesystemAlmostOutOfSpace
+    expr: (node_filesystem_avail_bytes{fstype!="",job="node-exporter"} / node_filesystem_size_bytes{fstype!="",job="node-exporter"} * 100 < 3 and node_filesystem_readonly{fstype!="",job="node-exporter"} == 0)
+    for: 30m
+    labels:
+      severity: critical
+    annotations:
+      description: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ printf "%.2f" $value }}% available space left.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemalmostoutofspace
+      summary: () Filesystem has less than 3% space left.
+  - alert: NodeFilesystemFilesFillingUp
+    expr: (node_filesystem_files_free{fstype!="",job="node-exporter"} / node_filesystem_files{fstype!="",job="node-exporter"} * 100 < 40 and predict_linear(node_filesystem_files_free{fstype!="",job="node-exporter"}[6h], 24 * 60 * 60) < 0 and node_filesystem_readonly{fstype!="",job="node-exporter"} == 0)
+    for: 1h
+    labels:
+      severity: warning
+    annotations:
+      description: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ printf "%.2f" $value }}% available inodes left and is filling up.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemfilesfillingup
+      summary: () Filesystem is predicted to run out of inodes within the next 24 hours.
+  - alert: NodeFilesystemFilesFillingUp
+    expr: (node_filesystem_files_free{fstype!="",job="node-exporter"} / node_filesystem_files{fstype!="",job="node-exporter"} * 100 < 20 and predict_linear(node_filesystem_files_free{fstype!="",job="node-exporter"}[6h], 4 * 60 * 60) < 0 and node_filesystem_readonly{fstype!="",job="node-exporter"} == 0)
+    for: 1h
+    labels:
+      severity: critical
+    annotations:
+      description: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ printf "%.2f" $value }}% available inodes left and is filling up fast.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemfilesfillingup
+      summary: () Filesystem is predicted to run out of inodes within the next 4 hours.
+  - alert: NodeFilesystemAlmostOutOfFiles
+    expr: (node_filesystem_files_free{fstype!="",job="node-exporter"} / node_filesystem_files{fstype!="",job="node-exporter"} * 100 < 5 and node_filesystem_readonly{fstype!="",job="node-exporter"} == 0)
+    for: 1h
+    labels:
+      severity: warning
+    annotations:
+      description: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ printf "%.2f" $value }}% available inodes left.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemalmostoutoffiles
+      summary: () Filesystem has less than 5% inodes left.
+  - alert: NodeFilesystemAlmostOutOfFiles
+    expr: (node_filesystem_files_free{fstype!="",job="node-exporter"} / node_filesystem_files{fstype!="",job="node-exporter"} * 100 < 3 and node_filesystem_readonly{fstype!="",job="node-exporter"} == 0)
+    for: 1h
+    labels:
+      severity: critical
+    annotations:
+      description: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ printf "%.2f" $value }}% available inodes left.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemalmostoutoffiles
+      summary: () Filesystem has less than 3% inodes left.
+  - alert: NodeNetworkReceiveErrs
+    expr: rate(node_network_receive_errs_total[2m]) / rate(node_network_receive_packets_total[2m]) > 0.01
+    for: 1h
+    labels:
+      severity: warning
+    annotations:
+      description: .{{ $labels.instance }} interface {{ $labels.device }} has encountered {{ printf "%.0f" $value }} receive errors in the last two minutes.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodenetworkreceiveerrs
+      summary: () Network interface is reporting many receive errors.
+  - alert: NodeNetworkTransmitErrs
+    expr: rate(node_network_transmit_errs_total[2m]) / rate(node_network_transmit_packets_total[2m]) > 0.01
+    for: 1h
+    labels:
+      severity: warning
+    annotations:
+      description: .{{ $labels.instance }} interface {{ $labels.device }} has encountered {{ printf "%.0f" $value }} transmit errors in the last two minutes.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodenetworktransmiterrs
+      summary: () Network interface is reporting many transmit errors.
+  - alert: NodeHighNumberConntrackEntriesUsed
+    expr: (node_nf_conntrack_entries / node_nf_conntrack_entries_limit) > 0.75
+    labels:
+      severity: warning
+    annotations:
+      description: .{{ $value | humanizePercentage }} of conntrack entries are used.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodehighnumberconntrackentriesused
+      summary: () Number of conntrack are getting close to the limit.
+  - alert: NodeTextFileCollectorScrapeError
+    expr: node_textfile_scrape_error{job="node-exporter"} == 1
+    labels:
+      severity: warning
+    annotations:
+      description: Node Exporter text file collector failed to scrape.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodetextfilecollectorscrapeerror
+      summary: () Node Exporter text file collector failed to scrape.
+  - alert: NodeClockSkewDetected
+    expr: (node_timex_offset_seconds > 0.05 and deriv(node_timex_offset_seconds[5m]) >= 0) or (node_timex_offset_seconds < -0.05 and deriv(node_timex_offset_seconds[5m]) <= 0)
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      description: Clock on {{ $labels.instance }} is out of sync by more than 300s. Ensure NTP is configured correctly on this host.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodeclockskewdetected
+      summary: () Clock skew detected.
+  - alert: NodeClockNotSynchronising
+    expr: min_over_time(node_timex_sync_status[5m]) == 0 and node_timex_maxerror_seconds >= 16
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      description: Clock on {{ $labels.instance }} is not synchronising. Ensure NTP is configured on this host.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodeclocknotsynchronising
+      summary: () Clock not synchronising.
+  - alert: NodeRAIDDegraded
+    expr: node_md_disks_required - ignoring(state) (node_md_disks{state="active"}) > 0
+    for: 15m
+    labels:
+      severity: critical
+    annotations:
+      description: RAID array '{{ $labels.device }}' on {{ $labels.instance }} is in degraded state due to one or more disks failures. Number of spare drives is insufficient to fix issue automatically.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/noderaiddegraded
+      summary: () RAID Array is degraded
+  - alert: NodeRAIDDiskFailure
+    expr: node_md_disks{state="failed"} > 0
+    labels:
+      severity: warning
+    annotations:
+      description: At least one device in RAID array on {{ $labels.instance }} failed. Array '{{ $labels.device }}' needs attention and possibly a disk swap.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/noderaiddiskfailure
+      summary: () Failed device in RAID array
+  - alert: NodeFileDescriptorLimit
+    expr: (node_filefd_allocated{job="node-exporter"} * 100 / node_filefd_maximum{job="node-exporter"} > 70)
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      description: File descriptors limit at {{ $labels.instance }} is currently at {{ printf "%.2f" $value }}%.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefiledescriptorlimit
+      summary: () Kernel is predicted to exhaust file descriptors limit soon.
+  - alert: NodeFileDescriptorLimit
+    expr: (node_filefd_allocated{job="node-exporter"} * 100 / node_filefd_maximum{job="node-exporter"} > 90)
+    for: 15m
+    labels:
+      severity: critical
+    annotations:
+      description: File descriptors limit at {{ $labels.instance }} is currently at {{ printf "%.2f" $value }}%.
+      runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefiledescriptorlimit
+      summary: () Kernel is predicted to exhaust file descriptors limit soon.
