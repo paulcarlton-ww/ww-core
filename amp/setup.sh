@@ -74,10 +74,11 @@ pip install --target ./package requests
 pip3 install --target ./package requests
 pip3 install --target ./package urllib3
 pip3 install --target ./package pyyaml
-cd package
+pushd package
 zip -r ../pager-deployment-package.zip .
-cd ..
+popd
 zip -g pager-deployment-package.zip lambda_function.py
+popd
 
 cat <<EOF >/tmp/pager-lambda-cloudwatch.json
 {
