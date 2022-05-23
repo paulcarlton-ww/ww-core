@@ -109,7 +109,7 @@ spec:
         kind: HelmRepository
         name: prometheus
         namespace: flux-system
-      version: '2.34.0'
+      version: '15.8.7'
   values:
     serviceAccounts:
       server:
