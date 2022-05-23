@@ -26,7 +26,7 @@ spec:
           eks.amazonaws.com/role-arn: arn:aws:iam::482649550366:role/amp-iamproxy-ingest-role
     server:
       remoteWrite:
-      - url: https://aps-workspaces.eu-west-1.amazonaws.com/workspaces/ws-50216346-875d-4c7c-8e0b-3ab3e134b8f7/api/v1/remote_write
+      - url: https://aps-workspaces.eu-west-1.amazonaws.com/workspaces/ws-44152a7a-f953-450e-85b1-96906e3b82d4/api/v1/remote_write
         sigv4:
           region: eu-west-1
   interval: 1m0s
