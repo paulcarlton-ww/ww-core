@@ -34,24 +34,30 @@ account_id=$(aws sts get-caller-identity --query "Account" --output text)
 
 cat <<EOF >/tmp/sns-policy.json
 {
-    "Sid": "Allow_Publish_Alarms",
-    "Effect": "Allow",
-    "Principal": {
-        "Service": "aps.amazonaws.com"
-    },
-    "Action": [
-        "sns:Publish",
-        "sns:GetTopicAttributes"
-    ],
-    "Condition": {
-        "ArnEquals": {
-            "aws:SourceArn": "arn:aws:aps:$AWS_REGION:$account_id:workspace/$amp_id"
+  "Version": "2008-10-17",
+  "Id": "__default_policy_ID",
+  "Statement": [
+    {
+        "Sid": "Allow_Publish_Alarms",
+        "Effect": "Allow",
+        "Principal": {
+            "Service": "aps.amazonaws.com"
         },
-        "StringEquals": {
-            "AWS:SourceAccount": "$account_id"
-        }
-    },
-    "Resource": "$topic_arn"
+        "Action": [
+            "sns:Publish",
+            "sns:GetTopicAttributes"
+        ],
+        "Condition": {
+            "ArnEquals": {
+                "aws:SourceArn": "arn:aws:aps:$AWS_REGION:$account_id:workspace/$amp_id"
+            },
+            "StringEquals": {
+                "AWS:SourceAccount": "$account_id"
+            }
+        },
+        "Resource": "$topic_arn"
+    }
+  ]
 }
 EOF
 

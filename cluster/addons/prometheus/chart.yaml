@@ -16,7 +16,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: prometheus
-        namespace: flux-system
+        namespace: prometheus
       version: '15.8.7'
   values:
     serviceAccounts:
@@ -26,7 +26,11 @@ spec:
           eks.amazonaws.com/role-arn: arn:aws:iam::482649550366:role/amp-iamproxy-ingest-role
     server:
       remoteWrite:
-      - url: https://aps-workspaces.eu-west-1.amazonaws.com/workspaces/ws-44152a7a-f953-450e-85b1-96906e3b82d4/api/v1/remote_write
+      - url: https://aps-workspaces.eu-west-1.amazonaws.com/workspaces/ws-d0dd95ab-0993-4de2-a58f-d99872f0657f/api/v1/remote_write
         sigv4:
-          region: eu-west-1
+          region: eu-west-1     
+        queue_config:
+          max_samples_per_send: 1000
+          max_shards: 200
+          capacity: 2500
   interval: 1m0s

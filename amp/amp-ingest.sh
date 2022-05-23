@@ -108,7 +108,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: prometheus
-        namespace: flux-system
+        namespace: prometheus
       version: '15.8.7'
   values:
     serviceAccounts:
@@ -120,7 +120,11 @@ spec:
       remoteWrite:
       - url: ${amp_endpoint}api/v1/remote_write
         sigv4:
-          region: ${AWS_REGION}
+          region: ${AWS_REGION}     
+        queue_config:
+          max_samples_per_send: 1000
+          max_shards: 200
+          capacity: 2500
   interval: 1m0s
 EOF
 #
