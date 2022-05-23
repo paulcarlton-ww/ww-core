@@ -87,7 +87,7 @@ if [ -z "$lambda_arn" ]; then
   popd
   zip -g pager-deployment-package.zip lambda_function.py
   lambda_arn=$(aws lambda create-function --function-name pager --zip-file fileb://pager-deployment-package.zip \
-              --handler lambda_function --runtime python3.9 --role $role_arn | jq -r '."FunctionArn"')
+              --handler lambda_handler --runtime python3.9 --role $role_arn | jq -r '."FunctionArn"')
   popd
 fi
 popd

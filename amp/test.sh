@@ -1,4 +1,4 @@
-#/bin/bash/env
+#/bin/bash
 
 
-awscurl --region eu-west-1 --service aps https://aps-workspaces.eu-west-1.amazonaws.com/workspaces/ws-47eb7077-4478-40e7-bb62-624957283ad8/alertmanager/api/v2/alerts -H 'Content-Type: application/json' | jq -r '.'
+awscurl --region eu-west-1 --service aps https://aps-workspaces.eu-west-1.amazonaws.com/workspaces/$AMP_ID/alertmanager/api/v2/alerts -H 'Accept: application/json' | jq -r '.'
