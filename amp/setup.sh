@@ -103,7 +103,7 @@ cat <<EOF >/tmp/pager-lambda-cloudwatch.json
 EOF
 
 policy_arn=$(aws iam create-policy --policy-name pager-lambda-cloudwatch --policy-document file:///tmp/pager-lambda-cloudwatch.json | jq -r '.Policy.Arn')
-role_arn=$(aws iam create-role --role-name pager-lambda-cloudwatch --assume-role-policy-document file:///alerts/sns-trust.json | jq -r '.Role.Arn')
+role_arn=$(aws iam create-role --role-name pager-lambda-cloudwatch --assume-role-policy-document file://sns-trust.json | jq -r '.Role.Arn')
 aws iam attach-role-policy --role-name pager-lambda-cloudwatch --policy-arn $policy_arn
 lambda_arn=$(aws lambda create-function --function-name pager --zip-file fileb://pager-deployment-package.zip \
             --handler lambda_function --runtime python3.9 --role $role_arn | jq -r '."FunctionArn"')
