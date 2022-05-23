@@ -2,7 +2,12 @@
 
 set -xe
 
-amp_id=$(aws amp create-workspace | jq -r '."workspaceId"')
+if [ -z "$AMP_ID" ]; then
+  amp_id=$(aws amp create-workspace | jq -r '."workspaceId"')
+else
+  amp_id=$AMP_ID
+fi
+
 amp_endpoint=$(aws amp describe-workspace --workspace-id $amp_id | jq -r '.workspace.prometheusEndpoint')
 
 export CLUSTER_NAME=paulcarlton-core
@@ -17,17 +22,17 @@ base64 < alert_rules1.yaml > /tmp/alert_rules1.b64
 base64 < alert_rules2.yaml > /tmp/alert_rules2.b64
 base64 < alert_rules3.yaml > /tmp/alert_rules3.b64
 base64 < alert_rules4.yaml > /tmp/alert_rules4.b64
-base64 < test_alert_rules4.yaml > /tmp/test_alert_rules4.b64
+base64 < test_alert_rules.yaml > /tmp/test_alert_rules.b64
 aws amp  create-rule-groups-namespace --data file:///tmp/alert_rules1.b64 --name k8s.rules1 --workspace-id $amp_id --region $AWS_REGION
 aws amp  create-rule-groups-namespace --data file:///tmp/alert_rules2.b64 --name k8s.rules2 --workspace-id $amp_id --region $AWS_REGION
 aws amp  create-rule-groups-namespace --data file:///tmp/alert_rules3.b64 --name k8s.rules3 --workspace-id $amp_id --region $AWS_REGION
 aws amp  create-rule-groups-namespace --data file:///tmp/alert_rules4.b64 --name k8s.rules4 --workspace-id $amp_id --region $AWS_REGION
-aws amp  create-rule-groups-namespace --data file:///tmp/test_alert_rules4.b64 --name test --workspace-id $amp_id --region $AWS_REGION
+aws amp  create-rule-groups-namespace --data file:///tmp/test_alert_rules.b64 --name test --workspace-id $amp_id --region $AWS_REGION
 
 topic_arn=$(aws sns create-topic --name pager | jq -r '.TopicArn')
 account_id=$(aws sts get-caller-identity --query "Account" --output text)
 
-echo <EOF >/tmp/sns-policy.json
+echo <<EOF >/tmp/sns-policy.json
 {
     "Sid": "Allow_Publish_Alarms",
     "Effect": "Allow",
@@ -68,7 +73,7 @@ zip -g pager-deployment-package.zip lambda_function.py
 python3 -m venv myvenv
 source myvenv/bin/activate
 
-echo <EOF >/tmp/pager-lambda-cloudwatch.json
+echo <<EOF >/tmp/pager-lambda-cloudwatch.json
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -89,6 +94,7 @@ echo <EOF >/tmp/pager-lambda-cloudwatch.json
         }
     ]
 }
+EOF
 
 policy_arn=$(iam create-policy --policy-name pager-lambda-cloudwatch --policy-document file:///tmp/pager-lambda-cloudwatch.json | jq -r '.Policy.Arn')
 role_arn=$(iam create-role --role-name pager-lambda-cloudwatch --assume-role-policy-document file:///sns-trust.json | jq -r '.Role.Arn')
@@ -101,7 +107,7 @@ aws lambda add-permission --function-name pager --source-arn $topic_arn --statem
 
 aws sns subscribe --protocol lambda --topic-arn $topic_arn --notification-endpoint $lambda_arn
 
-echo <EOF >/tmp/alert-mgr.yaml
+echo <<EOF >/tmp/alert-mgr.yaml
 alertmanager_config: |
   route:
     group_by: ['alertname']
