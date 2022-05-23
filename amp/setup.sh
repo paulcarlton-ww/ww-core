@@ -32,7 +32,7 @@ aws amp  create-rule-groups-namespace --data file:///tmp/test_alert_rules.b64 --
 topic_arn=$(aws sns create-topic --name pager | jq -r '.TopicArn')
 account_id=$(aws sts get-caller-identity --query "Account" --output text)
 
-echo <<EOF >/tmp/sns-policy.json
+cat <<EOF >/tmp/sns-policy.json
 {
     "Sid": "Allow_Publish_Alarms",
     "Effect": "Allow",
@@ -73,7 +73,7 @@ zip -g pager-deployment-package.zip lambda_function.py
 python3 -m venv myvenv
 source myvenv/bin/activate
 
-echo <<EOF >/tmp/pager-lambda-cloudwatch.json
+cat <<EOF >/tmp/pager-lambda-cloudwatch.json
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -107,7 +107,7 @@ aws lambda add-permission --function-name pager --source-arn $topic_arn --statem
 
 aws sns subscribe --protocol lambda --topic-arn $topic_arn --notification-endpoint $lambda_arn
 
-echo <<EOF >/tmp/alert-mgr.yaml
+cat <<EOF >/tmp/alert-mgr.yaml
 alertmanager_config: |
   route:
     group_by: ['alertname']

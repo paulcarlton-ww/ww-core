@@ -89,7 +89,7 @@ then
 else
     echo "$SERVICE_ACCOUNT_IAM_AMP_INGEST_ROLE_ARN IAM role for ingest already exists"
 fi
-echo <<EOF >./cluster/addons/prometheus/chart.yaml
+cat <<EOF >./cluster/addons/prometheus/chart.yaml
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
