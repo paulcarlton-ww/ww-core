@@ -60,11 +60,11 @@ aws amp  create-rule-groups-namespace --data file:///tmp/alert_rules4.b64 --name
 aws amp  create-rule-groups-namespace --data file:///tmp/test_alert_rules.b64 --name test --workspace-id $amp_id --region $AWS_REGION
 
 policy_arn=$(getPolicyArn pager-lambda-cloudwatch)
-if [ -z "$policy_arn"]; then 
+if [ -z "$policy_arn" ]; then 
   policy_arn=$(aws iam create-policy --policy-name pager-lambda-cloudwatch --policy-document file:///tmp/pager-lambda-cloudwatch.json | jq -r '.Policy.Arn')
 fi
 role_arn=$(getRoleArn pager-lambda-cloudwatch)
-if [ -z "$role_arn"]; then
+if [ -z "$role_arn" ]; then
   role_arn=$(aws iam create-role --role-name pager-lambda-cloudwatch --assume-role-policy-document file://sns-trust.json | jq -r '.Role.Arn')
 fi
 aws iam attach-role-policy --role-name pager-lambda-cloudwatch --policy-arn $policy_arn
@@ -86,9 +86,9 @@ if [ -z "$lambda_arn" ]; then
   zip -r ../pager-deployment-package.zip .
   popd
   zip -g pager-deployment-package.zip lambda_function.py
-  popd
   lambda_arn=$(aws lambda create-function --function-name pager --zip-file fileb://pager-deployment-package.zip \
               --handler lambda_function --runtime python3.9 --role $role_arn | jq -r '."FunctionArn"')
+  popd
 fi
 popd
 
@@ -115,13 +115,13 @@ cat <<EOF >/tmp/pager-lambda-cloudwatch.json
 }
 EOF
 
-aws lambda add-permission --function-name pager --source-arn $topic_arn --statement-id pager --action "lambda:InvokeFunction" --principal sns.amazonaws.com
-
-
 topic_arn=$(aws sns get-topic-attributes --topic-arn arn:aws:sns:$AWS_REGION:$account_id:pager | jq -r '.Attributes.TopicArn')
 if [ -z "$topic_arn" ]; then
   topic_arn=$(aws sns create-topic --name pager | jq -r '.TopicArn')
 fi
+
+aws lambda add-permission --function-name pager --source-arn $topic_arn --statement-id pager --action "lambda:InvokeFunction" --principal sns.amazonaws.com
+
 cat <<EOF >/tmp/sns-policy.json
 {
   "Version": "2008-10-17",
