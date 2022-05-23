@@ -185,6 +185,6 @@ alertmanager_config: |
 EOF
 
 base64 < /tmp/alert-mgr.yaml > /tmp/alert-mgr.b64
-aws amp put-alert-manager-definition --data file:///tmp/alert-mgr.b64 --workspace-id $amp_id
+aws amp create-alert-manager-definition --data file:///tmp/alert-mgr.b64 --workspace-id $amp_id
 
 
