@@ -55,7 +55,7 @@ cat <<EOF >/tmp/sns-policy.json
 }
 EOF
 
-aws sns set-topic-attributes --topic_arn $topic_arn --attribute-name Policy --attribute-value file:///tmp/sns-policy.json
+aws sns set-topic-attributes --topic-arn $topic_arn --attribute-name Policy --attribute-value file:///tmp/sns-policy.json
 
 src=$PWD
 rm -rf /tmp/pager-sourcecode-function
