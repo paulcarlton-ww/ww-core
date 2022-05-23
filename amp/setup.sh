@@ -48,6 +48,16 @@ git commit -a -m "deploy prometheus"
 git push
 
 pushd amp/alerts
+base64 < alert_rules1.yaml > /tmp/alert_rules1.b64
+base64 < alert_rules2.yaml > /tmp/alert_rules2.b64
+base64 < alert_rules3.yaml > /tmp/alert_rules3.b64
+base64 < alert_rules4.yaml > /tmp/alert_rules4.b64
+base64 < test_alert_rules.yaml > /tmp/test_alert_rules.b64
+aws amp  create-rule-groups-namespace --data file:///tmp/alert_rules1.b64 --name k8s.rules1 --workspace-id $amp_id --region $AWS_REGION
+aws amp  create-rule-groups-namespace --data file:///tmp/alert_rules2.b64 --name k8s.rules2 --workspace-id $amp_id --region $AWS_REGION
+aws amp  create-rule-groups-namespace --data file:///tmp/alert_rules3.b64 --name k8s.rules3 --workspace-id $amp_id --region $AWS_REGION
+aws amp  create-rule-groups-namespace --data file:///tmp/alert_rules4.b64 --name k8s.rules4 --workspace-id $amp_id --region $AWS_REGION
+aws amp  create-rule-groups-namespace --data file:///tmp/test_alert_rules.b64 --name test --workspace-id $amp_id --region $AWS_REGION
 
 policy_arn=$(getPolicyArn pager-lambda-cloudwatch)
 if [ -z "$policy_arn" ]; then 
