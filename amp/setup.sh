@@ -68,6 +68,8 @@ rm -rf /tmp/pager-sourcecode-function
 mkdir -p /tmp/pager-sourcecode-function
 pushd /tmp/pager-sourcecode-function
 cp $src/pager.py lambda_function.py
+python3 -m venv myvenv
+source myvenv/bin/activate
 pip install --target ./package requests
 pip3 install --target ./package requests
 pip3 install --target ./package urllib3
@@ -76,8 +78,6 @@ cd package
 zip -r ../pager-deployment-package.zip .
 cd ..
 zip -g pager-deployment-package.zip lambda_function.py
-python3 -m venv myvenv
-source myvenv/bin/activate
 
 cat <<EOF >/tmp/pager-lambda-cloudwatch.json
 {
@@ -104,7 +104,7 @@ EOF
 
 policy_arn=$(iam create-policy --policy-name pager-lambda-cloudwatch --policy-document file:///tmp/pager-lambda-cloudwatch.json | jq -r '.Policy.Arn')
 role_arn=$(iam create-role --role-name pager-lambda-cloudwatch --assume-role-policy-document file:///sns-trust.json | jq -r '.Role.Arn')
-iam attach-role-policy --role-name pager-lambda-cloudwatch --policy-arn $policy_arn
+aws iam attach-role-policy --role-name pager-lambda-cloudwatch --policy-arn $policy_arn
 lambda_arn=$(aws lambda create-function --function-name pager --zip-file fileb://pager-deployment-package.zip \
             --handler lambda_function --runtime python3.9 --role $role_arn | jq -r '."FunctionArn"')
 popd
