@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 SERVICE_ACCOUNT_NAMESPACE=prometheus
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
 OIDC_PROVIDER=$(aws eks describe-cluster --name $CLUSTER_NAME --query "cluster.identity.oidc.issuer" --output text | sed -e "s/^https:\/\///")

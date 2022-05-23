@@ -4,12 +4,12 @@
     {
       "Effect": "Allow",
       "Principal": {
-        "Federated": "arn:aws:iam::482649550366:oidc-provider/"
+        "Federated": "arn:aws:iam::482649550366:oidc-provider/oidc.eks.eu-west-1.amazonaws.com/id/311D104AF9CDD4E5344390A12196D808"
       },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
-          ":sub": "system:serviceaccount:prometheus:amp-iamproxy-query-service-account"
+          "oidc.eks.eu-west-1.amazonaws.com/id/311D104AF9CDD4E5344390A12196D808:sub": "system:serviceaccount:prometheus:amp-iamproxy-query-service-account"
         }
       }
     }

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -xe
+
 amp_id=$(aws amp create-workspace | jq -r '."workspaceId"')
 amp_endpoint=$(aws amp describe-workspace --workspace-id $amp_id | jq -r '.workspace.prometheusEndpoint')
 
