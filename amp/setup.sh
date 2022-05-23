@@ -2,6 +2,36 @@
 
 set -xe
 
+account_id=$(aws sts get-caller-identity --query "Account" --output text)
+
+function getRoleArn() {
+  OUTPUT=$(aws iam get-role --role-name $1 --query 'Role.Arn' --output text 2>&1)
+
+  # Check for an expected exception
+  if [[ $? -eq 0 ]]; then
+    echo $OUTPUT
+  elif [[ -n $(grep "NoSuchEntity" <<< $OUTPUT) ]]; then
+    echo ""
+  else
+    >&2 echo $OUTPUT
+    return 1
+  fi
+}
+
+function getPolicyArn() {
+  OUTPUT=$(aws iam get-policy --policy-arn arn:aws:iam::$account_id:policy/$1 --query 'Policy.Arn' --output text 2>&1)
+
+  # Check for an expected exception
+  if [[ $? -eq 0 ]]; then
+    echo $OUTPUT
+  elif [[ -n $(grep "NoSuchEntity" <<< $OUTPUT) ]]; then
+    echo ""
+  else
+    >&2 echo $OUTPUT
+    return 1
+  fi
+}
+
 if [ -z "$AMP_ID" ]; then
   amp_id=$(aws amp create-workspace | jq -r '."workspaceId"')
 else
@@ -29,9 +59,69 @@ aws amp  create-rule-groups-namespace --data file:///tmp/alert_rules3.b64 --name
 aws amp  create-rule-groups-namespace --data file:///tmp/alert_rules4.b64 --name k8s.rules4 --workspace-id $amp_id --region $AWS_REGION
 aws amp  create-rule-groups-namespace --data file:///tmp/test_alert_rules.b64 --name test --workspace-id $amp_id --region $AWS_REGION
 
-topic_arn=$(aws sns create-topic --name pager | jq -r '.TopicArn')
-account_id=$(aws sts get-caller-identity --query "Account" --output text)
+policy_arn=$(getPolicyArn pager-lambda-cloudwatch)
+if [ -z "$policy_arn"]; then 
+  policy_arn=$(aws iam create-policy --policy-name pager-lambda-cloudwatch --policy-document file:///tmp/pager-lambda-cloudwatch.json | jq -r '.Policy.Arn')
+fi
+role_arn=$(getRoleArn pager-lambda-cloudwatch)
+if [ -z "$role_arn"]; then
+  role_arn=$(aws iam create-role --role-name pager-lambda-cloudwatch --assume-role-policy-document file://sns-trust.json | jq -r '.Role.Arn')
+fi
+aws iam attach-role-policy --role-name pager-lambda-cloudwatch --policy-arn $policy_arn
 
+lambda_arn=$(aws lambda get-function --function-name pager | jq -r '.Configuration.FunctionArn')
+if [ -z "$lambda_arn" ]; then
+  src=$PWD
+  rm -rf /tmp/pager-sourcecode-function
+  mkdir -p /tmp/pager-sourcecode-function
+  pushd /tmp/pager-sourcecode-function
+  cp $src/pager.py lambda_function.py
+  python3 -m venv myvenv
+  source myvenv/bin/activate
+  pip install --target ./package requests
+  pip3 install --target ./package requests
+  pip3 install --target ./package urllib3
+  pip3 install --target ./package pyyaml
+  pushd package
+  zip -r ../pager-deployment-package.zip .
+  popd
+  zip -g pager-deployment-package.zip lambda_function.py
+  popd
+  lambda_arn=$(aws lambda create-function --function-name pager --zip-file fileb://pager-deployment-package.zip \
+              --handler lambda_function --runtime python3.9 --role $role_arn | jq -r '."FunctionArn"')
+fi
+popd
+
+cat <<EOF >/tmp/pager-lambda-cloudwatch.json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "logs:CreateLogGroup",
+            "Resource": "arn:aws:logs:$AWS_REGION:$account_id:*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": [
+                "arn:aws:logs:$AWS_REGION:$account_id:log-group:/aws/lambda/pager:*"
+            ]
+        }
+    ]
+}
+EOF
+
+aws lambda add-permission --function-name pager --source-arn $topic_arn --statement-id pager --action "lambda:InvokeFunction" --principal sns.amazonaws.com
+
+
+topic_arn=$(aws sns get-topic-attributes --topic-arn arn:aws:sns:$AWS_REGION:$account_id:pager | jq -r '.Attributes.TopicArn')
+if [ -z "$topic_arn" ]; then
+  topic_arn=$(aws sns create-topic --name pager | jq -r '.TopicArn')
+fi
 cat <<EOF >/tmp/sns-policy.json
 {
   "Version": "2008-10-17",
@@ -62,56 +152,6 @@ cat <<EOF >/tmp/sns-policy.json
 EOF
 
 aws sns set-topic-attributes --topic-arn $topic_arn --attribute-name 'Policy' --attribute-value file:///tmp/sns-policy.json
-
-src=$PWD
-rm -rf /tmp/pager-sourcecode-function
-mkdir -p /tmp/pager-sourcecode-function
-pushd /tmp/pager-sourcecode-function
-cp $src/pager.py lambda_function.py
-python3 -m venv myvenv
-source myvenv/bin/activate
-pip install --target ./package requests
-pip3 install --target ./package requests
-pip3 install --target ./package urllib3
-pip3 install --target ./package pyyaml
-pushd package
-zip -r ../pager-deployment-package.zip .
-popd
-zip -g pager-deployment-package.zip lambda_function.py
-popd
-
-cat <<EOF >/tmp/pager-lambda-cloudwatch.json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": "logs:CreateLogGroup",
-            "Resource": "arn:aws:logs:$AWS_REGION:$account_id:*"
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "logs:CreateLogStream",
-                "logs:PutLogEvents"
-            ],
-            "Resource": [
-                "arn:aws:logs:$AWS_REGION:$account_id:log-group:/aws/lambda/pager:*"
-            ]
-        }
-    ]
-}
-EOF
-
-policy_arn=$(aws iam create-policy --policy-name pager-lambda-cloudwatch --policy-document file:///tmp/pager-lambda-cloudwatch.json | jq -r '.Policy.Arn')
-pwd
-role_arn=$(aws iam create-role --role-name pager-lambda-cloudwatch --assume-role-policy-document file://sns-trust.json | jq -r '.Role.Arn')
-aws iam attach-role-policy --role-name pager-lambda-cloudwatch --policy-arn $policy_arn
-lambda_arn=$(aws lambda create-function --function-name pager --zip-file fileb://pager-deployment-package.zip \
-            --handler lambda_function --runtime python3.9 --role $role_arn | jq -r '."FunctionArn"')
-popd
-
-aws lambda add-permission --function-name pager --source-arn $topic_arn --statement-id pager --action "lambda:InvokeFunction" --principal sns.amazonaws.com
 
 aws sns subscribe --protocol lambda --topic-arn $topic_arn --notification-endpoint $lambda_arn
 

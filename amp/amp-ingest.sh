@@ -94,7 +94,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: prometheus
-  namespace: flux-system
+  namespace: prometheus
 spec:
   install:
     remediation:
