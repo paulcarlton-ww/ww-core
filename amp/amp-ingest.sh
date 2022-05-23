@@ -115,7 +115,7 @@ spec:
       server:
         name: amp-iamproxy-ingest-service-account
         annotations: 
-          eks.amazonaws.com/role-arn: ${IAM_PROXY_PROMETHEUS_ROLE_ARN}
+          eks.amazonaws.com/role-arn: ${SERVICE_ACCOUNT_IAM_AMP_INGEST_ROLE_ARN}
     server:
       remoteWrite:
       - url: ${amp_endpoint}api/v1/remote_write

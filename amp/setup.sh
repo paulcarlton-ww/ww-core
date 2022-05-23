@@ -8,7 +8,7 @@ else
   amp_id=$AMP_ID
 fi
 
-amp_endpoint=$(aws amp describe-workspace --workspace-id $amp_id | jq -r '.workspace.prometheusEndpoint')
+export amp_endpoint=$(aws amp describe-workspace --workspace-id $amp_id | jq -r '.workspace.prometheusEndpoint')
 
 export CLUSTER_NAME=paulcarlton-core
 ./amp/amp-ingest.sh
