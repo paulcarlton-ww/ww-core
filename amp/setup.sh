@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -xe
+set -e
 
 account_id=$(aws sts get-caller-identity --query "Account" --output text)
 
@@ -87,7 +87,7 @@ if [ -z "$lambda_arn" ]; then
   popd
   zip -g pager-deployment-package.zip lambda_function.py
   lambda_arn=$(aws lambda create-function --function-name pager --zip-file fileb://pager-deployment-package.zip \
-              --handler lambda_handler --runtime python3.9 --role $role_arn | jq -r '."FunctionArn"')
+              --handler lambda_function.lambda_handler --runtime python3.9 --role $role_arn | jq -r '."FunctionArn"')
   popd
 fi
 popd
@@ -187,4 +187,5 @@ EOF
 base64 < /tmp/alert-mgr.yaml > /tmp/alert-mgr.b64
 aws amp create-alert-manager-definition --data file:///tmp/alert-mgr.b64 --workspace-id $amp_id
 
-
+echo "paste command below into your shell"
+echo "export AMP_ID=$amp_id"
