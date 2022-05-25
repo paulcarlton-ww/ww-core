@@ -8,7 +8,7 @@ SERVICE_ACCOUNT_IAM_AMP_INGEST_POLICY=AMPIngestPolicy
 #
 # Set up a trust policy designed for a specific combination of K8s service account and namespace to sign in from a Kubernetes cluster which hosts the OIDC Idp.
 #
-cat <<EOF > TrustPolicy.json
+cat <<EOF > /tmp/TrustPolicy.json
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -30,7 +30,7 @@ EOF
 #
 # Set up the permission policy that grants ingest (remote write) permissions for all AMP workspaces
 #
-cat <<EOF > PermissionPolicyIngest.json
+cat <<EOF > /tmp/PermissionPolicyIngest.json
 {
   "Version": "2012-10-17",
    "Statement": [
@@ -72,13 +72,13 @@ then
   #
   SERVICE_ACCOUNT_IAM_AMP_INGEST_ROLE_ARN=$(aws iam create-role \
   --role-name $SERVICE_ACCOUNT_IAM_AMP_INGEST_ROLE \
-  --assume-role-policy-document file://TrustPolicy.json \
+  --assume-role-policy-document file:///tmp/TrustPolicy.json \
   --query "Role.Arn" --output text)
   #
   # Create an IAM permission policy
   #
   SERVICE_ACCOUNT_IAM_AMP_INGEST_ARN=$(aws iam create-policy --policy-name $SERVICE_ACCOUNT_IAM_AMP_INGEST_POLICY \
-  --policy-document file://PermissionPolicyIngest.json \
+  --policy-document file:///tmp/PermissionPolicyIngest.json \
   --query 'Policy.Arn' --output text)
   #
   # Attach the required IAM policies to the IAM role created above

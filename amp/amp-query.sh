@@ -8,7 +8,7 @@ SERVICE_ACCOUNT_IAM_AMP_QUERY_POLICY=AMPQueryPolicy
 #
 # Setup a trust policy designed for a specific combination of K8s service account and namespace to sign in from a Kubernetes cluster which hosts the OIDC Idp.
 #
-cat <<EOF > TrustPolicy.json
+cat <<EOF > /tmp/TrustPolicy.json
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -30,7 +30,7 @@ EOF
 #
 # Set up the permission policy that grants query permissions for all AMP workspaces
 #
-cat <<EOF > PermissionPolicyQuery.json
+cat <<EOF > /tmp/PermissionPolicyQuery.json
 {
   "Version": "2012-10-17",
    "Statement": [
@@ -72,13 +72,13 @@ then
   #
   SERVICE_ACCOUNT_IAM_AMP_QUERY_ROLE_ARN=$(aws iam create-role \
   --role-name $SERVICE_ACCOUNT_IAM_AMP_QUERY_ROLE \
-  --assume-role-policy-document file://TrustPolicy.json \
+  --assume-role-policy-document file:///tmp/TrustPolicy.json \
   --query "Role.Arn" --output text)
   #
   # Create an IAM permission policy
   #
   SERVICE_ACCOUNT_IAM_AMP_QUERY_ARN=$(aws iam create-policy --policy-name $SERVICE_ACCOUNT_IAM_AMP_QUERY_POLICY \
-  --policy-document file://PermissionPolicyQuery.json \
+  --policy-document file:///tmp/PermissionPolicyQuery.json \
   --query 'Policy.Arn' --output text)
   #
   # Attach the required IAM policies to the IAM role create above

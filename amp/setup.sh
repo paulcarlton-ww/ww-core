@@ -32,6 +32,11 @@ function getPolicyArn() {
   fi
 }
 
+if [ -z "$CLUSTER_NAME" ]; then
+  echo "export CLUSTER_NAME=<name of eks cluster>"
+  exit 1
+fi
+
 if [ -z "$AMP_ID" ]; then
   amp_id=$(aws amp create-workspace | jq -r '."workspaceId"')
 else
