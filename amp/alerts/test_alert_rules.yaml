@@ -2,9 +2,9 @@ groups:
  - name: example
    rules:
      - alert: KubernetesPodCrashLooping
-       expr: increase(kube_pod_container_status_restarts_total[1m]) > 1
+       expr: kube_pod_container_status_restarts_total > 1
        labels:
          severity: warning
        annotations:
          summary: Kubernetes pod crash looping (instance {{ $labels.instance }})
-         description: "Pod {{ $labels.pod }} is crash looping\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+         description: "Pod {{ $labels.pod }} crashed\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
