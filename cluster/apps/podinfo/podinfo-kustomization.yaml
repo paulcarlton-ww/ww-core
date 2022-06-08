@@ -16,9 +16,15 @@ spec:
     - patch: |-
         apiVersion: apps/v1
         kind: Deployment
-        metadata:
-          name: not-used
         spec:
           replicas: 1        
       target:
         kind: Deployment
+    - patch: |-
+        apiVersion: autoscaling/v1
+        kind: HorizontalPodAutoscaler
+        spec:
+          maxReplicas: 1
+          minReplicas: 1       
+      target:
+        kind: HorizontalPodAutoscaler
