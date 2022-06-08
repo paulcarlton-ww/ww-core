@@ -60,7 +60,7 @@ done
 
 while [ -n "$(aws amp list-rule-groups-namespaces --workspace-id $amp_id --region $AWS_REGION | jq -r '.ruleGroupsNamespaces[].name')" ]
 do
-  echo "waitning for previous rule namespaces to be deleted"
+  echo "waiting for previous rule namespaces to be deleted"
   sleep 1
 done
 
@@ -200,10 +200,19 @@ alertmanager_config: |
           alert_name: {{ .CommonLabels.alertname }}
 EOF
 
-aws amp get-alert-manager-definition --workspace-id $amp_id
+set +e
+aws amp describe-alert-manager-definition --workspace-id $amp_id
+if [ $? == 0 ]; then
+  op=put
+else
+  op=create
+fi
+set -e
+
+#aws amp delete-alert-manager-definition --workspace-id $amp_id
 
 base64 < /tmp/alert-mgr.yaml > /tmp/alert-mgr.b64
-aws amp create-alert-manager-definition --data file:///tmp/alert-mgr.b64 --workspace-id $amp_id
+aws amp $op-alert-manager-definition --data file:///tmp/alert-mgr.b64 --workspace-id $amp_id
 
 echo "paste command below into your shell"
 echo "export AMP_ID=$amp_id"
