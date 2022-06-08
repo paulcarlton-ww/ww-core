@@ -22,4 +22,3 @@ spec:
           replicas: 1        
       target:
         kind: Deployment
-        labelSelector: "kustomize.toolkit.fluxcd.io/name=podinfo"
