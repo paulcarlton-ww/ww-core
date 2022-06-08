@@ -12,19 +12,4 @@ spec:
     kind: GitRepository
     name: podinfo
   targetNamespace: webapp
-  patches:
-    - patch: |
-        apiVersion: apps/v1
-        kind: Deployment
-        spec:
-          replicas: 1        
-      target:
-        kind: Deployment
-    - patch: |
-        apiVersion: autoscaling/v1
-        kind: HorizontalPodAutoscaler
-        spec:
-          maxReplicas: 1
-          minReplicas: 1       
-      target:
-        kind: HorizontalPodAutoscaler
+  
