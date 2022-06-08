@@ -45,7 +45,7 @@ fi
 
 export amp_endpoint=$(aws amp describe-workspace --workspace-id $amp_id | jq -r '.workspace.prometheusEndpoint')
 
-export CLUSTER_NAME=paulcarlton-core
+
 ./amp/amp-ingest.sh
 ./amp/amp-query.sh
 git add -A
