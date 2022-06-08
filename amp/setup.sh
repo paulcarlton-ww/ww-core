@@ -201,7 +201,7 @@ alertmanager_config: |
 EOF
 
 set +e
-aws amp describe-alert-manager-definition --workspace-id $amp_id
+aws amp describe-alert-manager-definition --workspace-id $amp_id >/dev/null
 if [ $? == 0 ]; then
   op=put
 else
