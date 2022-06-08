@@ -200,6 +200,8 @@ alertmanager_config: |
           alert_name: {{ .CommonLabels.alertname }}
 EOF
 
+aws amp get-alert-manager-definition --workspace-id $amp_id
+
 base64 < /tmp/alert-mgr.yaml > /tmp/alert-mgr.b64
 aws amp create-alert-manager-definition --data file:///tmp/alert-mgr.b64 --workspace-id $amp_id
 
