@@ -53,11 +53,11 @@ git commit -a -m "deploy prometheus"
 git push
 
 pushd amp/alerts
-aws amp delete-rule-groups-namespace --name k8s.rules1 --workspace-id $amp_id --region $AWS_REGION
-aws amp delete-rule-groups-namespace --name k8s.rules2 --workspace-id $amp_id --region $AWS_REGION
-aws amp delete-rule-groups-namespace --name k8s.rules3 --workspace-id $amp_id --region $AWS_REGION
-aws amp delete-rule-groups-namespace --name k8s.rules4 --workspace-id $amp_id --region $AWS_REGION
-aws amp delete-rule-groups-namespace --name test --workspace-id $amp_id --region $AWS_REGION
+for name_space in $(aws amp list-rule-groups-namespaces --workspace-id $amp_id --region $AWS_REGION | jq -r '.ruleGroupsNamespaces[].name')
+do
+  aws amp delete-rule-groups-namespace --name $name_space --workspace-id $amp_id --region $AWS_REGION
+done
+
 base64 < alert_rules1.yaml > /tmp/alert_rules1.b64
 base64 < alert_rules2.yaml > /tmp/alert_rules2.b64
 base64 < alert_rules3.yaml > /tmp/alert_rules3.b64
