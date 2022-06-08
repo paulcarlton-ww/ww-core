@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -x
 account_id=$(aws sts get-caller-identity --query "Account" --output text)
 
 function getRoleArn() {
@@ -70,7 +70,7 @@ cat <<EOF >/tmp/pager-lambda-cloudwatch.json
 }
 EOF
 
-aws sns delete-topic --topic-arn arn:aws:logs:$AWS_REGION:$account_id:pager
+aws sns delete-topic --topic-arn arn:aws:sns:$AWS_REGION:$account_id:pager
 
 
 
