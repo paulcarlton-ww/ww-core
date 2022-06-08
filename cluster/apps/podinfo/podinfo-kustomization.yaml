@@ -20,7 +20,7 @@ spec:
           replicas: 1        
       target:
         kind: Deployment
-    - patch: |-
+    - patch: |
         apiVersion: autoscaling/v1
         kind: HorizontalPodAutoscaler
         spec:
