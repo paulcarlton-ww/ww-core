@@ -58,6 +58,12 @@ do
   aws amp delete-rule-groups-namespace --name $name_space --workspace-id $amp_id --region $AWS_REGION
 done
 
+while [ -n "$(aws amp list-rule-groups-namespaces --workspace-id $amp_id --region $AWS_REGION | jq -r '.ruleGroupsNamespaces[].name')" ]
+do
+  echo "waitning for previous rule namespaces to be deleted"
+  sleep 1
+done
+
 base64 < alert_rules1.yaml > /tmp/alert_rules1.b64
 base64 < alert_rules2.yaml > /tmp/alert_rules2.b64
 base64 < alert_rules3.yaml > /tmp/alert_rules3.b64
