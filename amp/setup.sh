@@ -86,26 +86,28 @@ fi
 aws iam attach-role-policy --role-name pager-lambda-cloudwatch --policy-arn $policy_arn
 
 lambda_arn=$(aws lambda get-function --function-name pager | jq -r '.Configuration.FunctionArn')
-if [ -z "$lambda_arn" ]; then
-  src=$PWD
-  rm -rf /tmp/pager-sourcecode-function
-  mkdir -p /tmp/pager-sourcecode-function
-  pushd /tmp/pager-sourcecode-function
-  cp $src/pager.py lambda_function.py
-  python3 -m venv myvenv
-  source myvenv/bin/activate
-  pip install --target ./package requests
-  pip3 install --target ./package requests
-  pip3 install --target ./package urllib3
-  pip3 install --target ./package pyyaml
-  pushd package
-  zip -r ../pager-deployment-package.zip .
-  popd
-  zip -g pager-deployment-package.zip lambda_function.py
-  lambda_arn=$(aws lambda create-function --function-name pager --zip-file fileb://pager-deployment-package.zip \
-              --handler lambda_function.lambda_handler --runtime python3.9 --role $role_arn | jq -r '."FunctionArn"')
-  popd
+if [ -n "$lambda_arn" ]; then
+  aws lambda delete-function --function-name pager
 fi
+src=$PWD
+rm -rf /tmp/pager-sourcecode-function
+mkdir -p /tmp/pager-sourcecode-function
+pushd /tmp/pager-sourcecode-function
+cp $src/pager.py lambda_function.py
+python3 -m venv myvenv
+source myvenv/bin/activate
+pip install --target ./package requests
+pip3 install --target ./package requests
+pip3 install --target ./package urllib3
+pip3 install --target ./package pyyaml
+pushd package
+zip -r ../pager-deployment-package.zip .
+popd
+zip -g pager-deployment-package.zip lambda_function.py
+lambda_arn=$(aws lambda create-function --function-name pager --zip-file fileb://pager-deployment-package.zip \
+            --handler lambda_function.lambda_handler --runtime python3.9 --role $role_arn | jq -r '."FunctionArn"')
+popd
+
 popd
 
 cat <<EOF >/tmp/pager-lambda-cloudwatch.json
