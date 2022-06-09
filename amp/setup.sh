@@ -136,9 +136,8 @@ EOF
 topic_arn=$(aws sns get-topic-attributes --topic-arn arn:aws:sns:$AWS_REGION:$account_id:pager | jq -r '.Attributes.TopicArn' 2>/dev/null)
 if [ -z "$topic_arn" ]; then
   topic_arn=$(aws sns create-topic --name pager | jq -r '.TopicArn')
-  aws lambda add-permission --function-name pager --source-arn $topic_arn --statement-id pager --action "lambda:InvokeFunction" --principal sns.amazonaws.com
 fi
-
+aws lambda add-permission --function-name pager --source-arn $topic_arn --statement-id pager --action "lambda:InvokeFunction" --principal sns.amazonaws.com
 cat <<EOF >/tmp/sns-policy.json
 {
   "Version": "2008-10-17",
