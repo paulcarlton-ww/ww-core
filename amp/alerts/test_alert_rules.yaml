@@ -2,7 +2,7 @@ groups:
  - name: example
    rules:
      - alert: KubernetesPodCrashLooping
-       expr: increase(kube_pod_container_status_restarts_total[5m]) > 1
+       expr: increase(kube_pod_container_status_restarts_total[5m]) > 2
        labels:
          severity: warning
        annotations:
