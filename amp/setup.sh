@@ -85,7 +85,7 @@ if [ -z "$role_arn" ]; then
 fi
 aws iam attach-role-policy --role-name pager-lambda-cloudwatch --policy-arn $policy_arn
 
-lambda_arn=$(aws lambda get-function --function-name pager | jq -r '.Configuration.FunctionArn')
+lambda_arn=$(aws lambda get-function --function-name pager | jq -r '.Configuration.FunctionArn' 2>/dev/null)
 if [ -n "$lambda_arn" ]; then
   aws lambda delete-function --function-name pager
 fi
@@ -133,7 +133,7 @@ cat <<EOF >/tmp/pager-lambda-cloudwatch.json
 }
 EOF
 
-topic_arn=$(aws sns get-topic-attributes --topic-arn arn:aws:sns:$AWS_REGION:$account_id:pager | jq -r '.Attributes.TopicArn')
+topic_arn=$(aws sns get-topic-attributes --topic-arn arn:aws:sns:$AWS_REGION:$account_id:pager | jq -r '.Attributes.TopicArn' 2>/dev/null)
 if [ -z "$topic_arn" ]; then
   topic_arn=$(aws sns create-topic --name pager | jq -r '.TopicArn')
   aws lambda add-permission --function-name pager --source-arn $topic_arn --statement-id pager --action "lambda:InvokeFunction" --principal sns.amazonaws.com
@@ -203,7 +203,7 @@ alertmanager_config: |
 EOF
 
 set +e
-aws amp describe-alert-manager-definition --workspace-id $amp_id >/dev/null
+aws amp describe-alert-manager-definition --workspace-id $amp_id 2>/dev/null
 if [ $? == 0 ]; then
   op=put
 else
