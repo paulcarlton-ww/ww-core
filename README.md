@@ -20,3 +20,7 @@ The `amp/setup.sh` script can be rerun but to avoid it creating a new Amazon Man
 
     export AMP_ID=ws-...
     amp/setup.sh
+
+## Builtkit
+
+The `buildkit` folder contains resources relating to the deployment of [mody buildkit](https://github.com/moby/buildkit) on the cluster.

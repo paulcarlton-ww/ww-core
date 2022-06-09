@@ -39,6 +39,45 @@ managedNodeGroups:
         certManager: true
         albIngress: true
 
+  - name: ng-2-amd
+    minSize: 1
+    maxSize: 4
+    desiredCapacity: 3
+    volumeSize: 20
+    ssh:
+      allow: true
+      publicKeyPath: ~/.ssh/id_rsa.pub
+    labels: {role: amd}
+    tags:
+      nodegroup-role: amd
+    iam:
+      withAddonPolicies:
+        externalDNS: true
+        certManager: true
+        albIngress: true
+    instanceSelector:
+      cpuArchitecture: amd64
+      memory: 16GiB
+      vCpus: 4
+
+  - name: ng-3-arm
+    minSize: 1
+    maxSize: 4
+    desiredCapacity: 3
+    volumeSize: 20
+    instanceType: m6g.large
+    ssh:
+      allow: true
+      publicKeyPath: ~/.ssh/id_rsa.pub
+    labels: {role: arm}
+    tags:
+      nodegroup-role: arm
+    iam:
+      withAddonPolicies:
+        externalDNS: true
+        certManager: true
+        albIngress: true
+
 gitops:
   flux:
     gitProvider: github
