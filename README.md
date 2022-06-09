@@ -12,11 +12,11 @@ The `amp` folder contains scripts to deploy Prometheus remote write agent to the
 
 To deploy this execute the amp/setup.sh script. This script requires environmental variables containing pager duty integration key and cluster name.
 
-  export PAGER_DUTY_KEY=<integration key>
-  export CLUSTER_NAME=<eks cluster name>
-  amp/setup.sh
+    export PAGER_DUTY_KEY=<integration key>
+    export CLUSTER_NAME=<eks cluster name>
+    amp/setup.sh
 
 The `amp/setup.sh` script can be rerun but to avoid it creating a new Amazon Managed Prometheus workspace set the `AMP_ID` environmental variable to the workspace id...
 
-  export AMP_ID=ws-...
-  amp/setup.sh
+    export AMP_ID=ws-...
+    amp/setup.sh

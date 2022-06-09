@@ -48,9 +48,12 @@ export amp_endpoint=$(aws amp describe-workspace --workspace-id $amp_id | jq -r 
 
 ./amp/amp-ingest.sh
 ./amp/amp-query.sh
-git add -A
-git commit -a -m "deploy prometheus"
-git push
+
+if [ "$(git status | tail -1)" == "nothing to commit, working tree clean" ] ; then
+  git add -A
+  git commit -a -m "deploy prometheus"
+  git push
+fi
 
 pushd amp/alerts
 for name_space in $(aws amp list-rule-groups-namespaces --workspace-id $amp_id --region $AWS_REGION | jq -r '.ruleGroupsNamespaces[].name')
