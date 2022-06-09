@@ -7,7 +7,9 @@ def lambda_handler(event, context):
     
     #In this implementation, payload.summary is set to description (to mimic pagerduty_config.description)
     #In this implementation, payload.source is set to client_url
-    
+    print({
+        "SNS": event['Records'][0]['Sns'],
+    })
     url = "https://events.pagerduty.com/v2/enqueue"
     msg = yaml.safe_load(event['Records'][0]['Sns']['Message'])
     details = None
@@ -64,7 +66,6 @@ def lambda_handler(event, context):
     encoded_msg = json.dumps(msg).encode('utf-8')
     resp = http.request('POST',url, body=encoded_msg)
     print({
-        "SNS": event['Records'][0]['Sns'],
         "url": url,
         "message": encoded_msg, 
         "status_code": resp.status, 
